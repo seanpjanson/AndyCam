@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">AndyCam</string>
+
+  <string name="err_init">INITIALIZATION FAILURE !</string>
+
+  <string name="act_setting">Settings</string>
+</resources>
