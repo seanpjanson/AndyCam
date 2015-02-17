@@ -15,6 +15,7 @@ package com.andyscan.andycam;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.view.Gravity;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.FrameLayout;
@@ -47,10 +48,11 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback {
     if (sh.getSurface() != null && Math.abs(mRatio - oldRat) > 0.03f) {
       CamMgr.preview(false);
 
-      // Cam dims come in LAND, whereas width,height is PORT/LAND based on device orientation.
-      // so, in PORT, you get 480x800, but cam params list show 800x480, 640x320, ...
-      boolean bSwap = wid < hei;
-      if (bSwap) { int tmp = hei; hei = wid; wid = tmp; }
+      // CAM sizes always come in LAND, whereas width,height is PORT/LAND based on rotation.
+      // so, in PORT, we may get 480x800, but mCam params list show 800x480, 640x320, ...
+      if (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180) {
+        int tmp = hei; hei = wid; wid = tmp;                 // just a swap
+      }                                                      // UT.lg("_ in " + wid + "x" + hei);
 
       oldRat = (float)wid/hei;                //UT.lg("in " + wid + "x" + hei + " " + oldRat);
       float newRat = CamMgr.setCamera(sh, wid, hei, UT.getDegs(mRot));
@@ -62,8 +64,7 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback {
           if (oldRat > newRat) hei = (int)((oldRat * hei) / newRat);
           else                 wid = (int)((newRat * wid) / oldRat);
         }
-        mRatio = (float)wid/hei;                UT.lg("out " + wid + "x" + hei + " " + mRatio);
-        if (bSwap) { int tmp = hei; hei = wid; wid = tmp; }
+        mRatio = (float)wid/hei;              //UT.lg("out " + wid + "x" + hei + " " + mRatio);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(wid, hei);
         lp.gravity = Gravity.CENTER;
         mSv.setLayoutParams(lp);
