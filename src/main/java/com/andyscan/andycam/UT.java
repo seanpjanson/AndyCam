@@ -35,17 +35,7 @@ final class UT {   private UT() {}    // singleton pattern
   static UT init(Context ctx, Activity act) {
     if (mInst == null) {
       acx = ctx.getApplicationContext();
-      if (act != null) {
-        Display dsp = act.getWindowManager().getDefaultDisplay();
-        Point dispSz = new Point();
-        dsp.getSize(dispSz);
-        int rot = dsp.getRotation();
-        if (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) {
-          isLandTab = dispSz.x < dispSz.y;
-        } else {
-          isLandTab = dispSz.x > dispSz.y;
-        }
-      }
+      isLandTab = getTabType(act);
       mInst = new UT();
     }
     return mInst;
@@ -61,56 +51,15 @@ final class UT {   private UT() {}    // singleton pattern
   static final int IMAGE_SZ = 1600;  // 0 for preview area, else  1200, 1600, 2048 ... envelopes;
   static final int IMAGE_QUAL = 90;
 
-  static Bitmap getRotBM(byte[] buf, int rot) {
-    Bitmap bm = null;
-    if (buf != null) try {
-      bm = BitmapFactory.decodeByteArray(buf, 0, buf.length);
-      if (bm != null) {                 //lg(" " + bm.getWidth() + " " + bm.getHeight());
-        if (isLandTab) {
-          switch (rot) {
-            case Surface.ROTATION_0:   default: break;
-            case Surface.ROTATION_90:  bm = rotBM(bm, 270); break;
-            case Surface.ROTATION_180: bm = rotBM(bm, 180); break;
-            case Surface.ROTATION_270: bm = rotBM(bm, 90);  break;
-          }
-        } else {
-          switch (rot) {
-            case Surface.ROTATION_0:   bm = rotBM(bm, 90);  break;
-            case Surface.ROTATION_90:  default: break;
-            case Surface.ROTATION_180: bm = rotBM(bm, 270); break;
-            case Surface.ROTATION_270: bm = rotBM(bm, 180);
-              break;
-          }
-        }
-      }
-    } catch (OutOfMemoryError oom) { System.gc(); }
-    catch (Exception e) { le(e); }
-    return bm;
-  }
-  private static Bitmap rotBM(Bitmap src, float degs) {
-    if (degs == 0) return src;
-    Bitmap bm = null;
-    if (src != null) {
-      Matrix matrix = new Matrix();
-      matrix.postRotate(degs);
-      bm = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
-    }
-    return bm;
+  static boolean getTabType(Activity act) {
+    Display dsp = act.getWindowManager().getDefaultDisplay();
+    Point dispSz = new Point();
+    dsp.getSize(dispSz);
+    int rot = dsp.getRotation();
+    return (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) ?
+     (dispSz.x < dispSz.y) : (dispSz.x > dispSz.y);
   }
 
-  static int getDegs(int rot) {   //TAB sensing handle the N7-I, N10, PD10 tablets
-    int degs = 0;
-    switch (rot) {
-      case Surface.ROTATION_0:      degs =  90;    break;
-      case Surface.ROTATION_90:     degs =   0;    break;
-      case Surface.ROTATION_180:    degs = 270;    break;
-      case Surface.ROTATION_270:    degs = 180;    break;
-    }
-    if (isLandTab) {  // NEX7(1st gen), PD10
-      degs = (degs + 270) % 360;   //deduct 90, limit to  0...360
-    }
-    return degs;
-  }
   static int getOri(Activity act) {    // returns 0,1,8,9  (SCREEN_ORIENTATION_...)
     Display dsp = act.getWindowManager().getDefaultDisplay();
     Point dispSz = new Point();
@@ -150,6 +99,39 @@ final class UT {   private UT() {}    // singleton pattern
     }
     return ori;
   }
+
+  static int getDegs(int rot) {   //TAB sensing handle the N7-I, N10, PD10 tablets
+    int degs = 0;
+    switch (rot) {
+      case Surface.ROTATION_0:      degs =  90;    break;
+      case Surface.ROTATION_180:    degs = 270;    break;
+      case Surface.ROTATION_270:    degs = 180;    break;
+    }
+    if (isLandTab) {  // NEX7(1st gen), PD10
+      degs = (degs + 270) % 360;   //deduct 90, limit to  0...360
+    }
+    return degs;
+  }
+
+  static Bitmap getRotBM(byte[] buf, int rot) {
+    Bitmap bm = null;
+    if (buf != null) try {
+      bm = rotBM(BitmapFactory.decodeByteArray(buf, 0, buf.length), getDegs(rot));
+    } catch (OutOfMemoryError oom) { System.gc(); }
+    catch (Exception e) { le(e); }
+    return bm;
+  }
+
+  private static Bitmap rotBM(Bitmap src, float degs) {
+    if (degs == 0) return src;
+    if (src != null) {
+      Matrix matrix = new Matrix();
+      matrix.postRotate(degs);
+      return Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
+    }
+    return null;
+  }
+
   static int lockRot(Activity act, int ori) {      // returns 0,1,2,3  (Surface.ROTATION_...)
     act.setRequestedOrientation(ori);
     return act.getWindowManager().getDefaultDisplay().getRotation();

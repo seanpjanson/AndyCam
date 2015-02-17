@@ -37,7 +37,6 @@ public class MainActivity extends Activity{
     }
 
     mRot = UT.lockRot(this, UT.getOri(this));  //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
     setContentView(R.layout.activity_main);
 
     mCamSV = (SurfaceView)findViewById(R.id.sv_cam);
