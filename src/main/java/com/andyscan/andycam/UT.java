@@ -58,7 +58,7 @@ final class UT {   private UT() {}    // singleton pattern
   // - FIT_IN ... will have black stripes on sides
   // - FIT_OUT ... part of the picture will overflow the screen
   static final boolean FIT_IN = true;
-  static final int IMAGE_SZ = 0;  // 0 for preview area, else  1200, 1600, 2048 ... envelopes;
+  static final int IMAGE_SZ = 1600;  // 0 for preview area, else  1200, 1600, 2048 ... envelopes;
   static final int IMAGE_QUAL = 90;
 
   static Bitmap getRotBM(byte[] buf, int rot) {
