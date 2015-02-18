@@ -73,6 +73,5 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   @Override public void surfaceCreated(SurfaceHolder sh) {CamMgr.setHolder(sh);  }
-
   @Override public void surfaceDestroyed(SurfaceHolder sh) {}
 }

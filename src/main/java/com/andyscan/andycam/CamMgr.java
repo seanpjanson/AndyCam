@@ -39,15 +39,13 @@ final class CamMgr {   private CamMgr(){}
   }
 
   static void open() {  // call from RESUME
-    if (mCamera == null) {
-      try {
-        mCamera = Camera.open();                                         //UT.lg("cam opened");
-      } catch (Exception e) {UT.le(e);}
-      if (mCamera == null) try {  // OUCH !!!
-        Method m = Camera.class.getMethod("open", Integer.TYPE);
-        mCamera = (Camera)m.invoke(null, 0);                        //UT.lg("on second attempt");
-      } catch (Exception e) {UT.le(e);}
-    }
+    if (mCamera != null) return;
+    try { mCamera = Camera.open();                                      //UT.lg("cam opened ");
+    } catch (Exception e) {UT.le(e);}
+    if (mCamera == null) try {  // OUCH !!!
+      Method m = Camera.class.getMethod("open", Integer.TYPE);
+      mCamera = (Camera)m.invoke(null, 0);                        //UT.lg("on second attempt");
+    } catch (Exception e) {UT.le(e);}
   }
 
   static void close() {    // call from PAUSE to release the camera for use by other apps
@@ -75,20 +73,18 @@ final class CamMgr {   private CamMgr(){}
   }
 
   static void snapPic() {
-    if (mCamera != null && !mIsBusy) {
-      mIsBusy = true;
-      mCamera.autoFocus(new Camera.AutoFocusCallback() {
-        @Override public void onAutoFocus(boolean bSuccess, Camera cam) {                               //UT.lg("focused );
-          mCamera.takePicture(null, null, new Camera.PictureCallback() {
-            @Override public void onPictureTaken(final byte[] data, Camera cam) {
-              mCamVw.onPicTaken(data.clone());                              //UT.lg("pic taken");
-              mIsBusy = false;
-            }
-          });
-        }
-      });
-
-    }
+    if (mCamera == null || mIsBusy) return;  //----------------->>>>
+    mIsBusy = true;
+    mCamera.autoFocus(new Camera.AutoFocusCallback() {
+      @Override public void onAutoFocus(boolean bSuccess, Camera cam) {                               //UT.lg("focused );
+        mCamera.takePicture(null, null, new Camera.PictureCallback() {
+          @Override public void onPictureTaken(final byte[] data, Camera cam) {
+            mCamVw.onPicTaken(data.clone());                              //UT.lg("pic taken");
+            mIsBusy = false;
+          }
+        });
+      }
+    });
   }
 
   static void setHolder(SurfaceHolder sh) { mSurfHolder = sh; }
@@ -96,7 +92,6 @@ final class CamMgr {   private CamMgr(){}
   static float setCamera(SurfaceHolder surfHldr, int wid, int hei, int orient) {
     float ratio = 0.0f;
     if (mCamera != null) try {
-
       Camera.Parameters prms = mCamera.getParameters();  //UT.lg("\n"+wid+"x"+hei+" "+(float)wid/hei);
 
       Camera.Size picSz = pictSz(prms.getSupportedPictureSizes(), wid, hei, UT.IMAGE_SZ);
@@ -132,10 +127,10 @@ final class CamMgr {   private CamMgr(){}
     return ratio;
   }
   private static Camera.Size pictSz(List<Camera.Size> sizes, int wid, int hei, int imgSz) {
-    if (sizes != null && (wid * hei) != 0) {                         //String dump = "";
+    if (sizes != null && (wid * hei) != 0) {                      //String dump = "";
       // required area is the preview area  if not explicitly requested by 'img size'  envelope
       int reqSz = (imgSz == 0 ) ?
-       (wid * hei) : imgSz * (wid > hei ? (imgSz * hei) / wid : (imgSz * wid) / hei);
+                (wid * hei) : imgSz * (wid > hei ? (imgSz * hei) / wid : (imgSz * wid) / hei);
       Camera.Size posOptimSz = null, negOptimSz = null;
       int posDiff = +Integer.MAX_VALUE;
       int negDiff = -Integer.MAX_VALUE;
