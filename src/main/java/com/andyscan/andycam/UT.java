@@ -1,16 +1,4 @@
 package com.andyscan.andycam;
-//region COPYRIGHT
-/**
- * Copyright 2015 Sean Janson. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
-//endregion
 
 import android.app.Activity;
 import android.content.Context;
@@ -27,29 +15,83 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 
-final class UT {   private UT() {}    // singleton pattern
-  private static UT mInst;
-  static Context acx;
-  static boolean isLandTab;  //N7-I(Nexus7-1stGen), PD10 have LAND default, N7-II, SAMS have PORT
+final class UT {   private UT() {}
 
-  static UT init(Context ctx, Activity act) {
-    if (mInst == null) {
-      acx = ctx.getApplicationContext();
-      isLandTab = getTabType(act);
-      mInst = new UT();
-    }
-    return mInst;
-  }
+  // IMAGE_SZ the desired (approximate) image size specified as size of a square the
+  //   final image should fit. For instance, the value of 1600 will attempt to select
+  //   the picture size closest to 1600 x ... where the 1600 is the longer side.
+  //   Depending on the camera's offering, the result may different.
+  //   Value of 0, takes the camera's screen size and tries to find the closest
+  //   picture size. For instance, if the current screen real-estate is 1184 x 768
+  //   (varies even on a single device based on current orientation, action bars etc..),
+  //   the picture size may end up being 1280x720
+  static final int IMAGE_SZ = 1600;   // 0 for preview area, else 800, 1200, 1600, 2048 ...;
+
+  // FIT-IN controls the relation between camera preview and final picture.
+  //   Since the desired picture dimensions are not initially known, the picture
+  //   sides' ratio is unknown as well (for instance for desired IMG_SZ of 1600,
+  //   the camera returns 1600x1200 picture size.
+  //   In the next step, the 1600x1200 (1.333 ratio) is compared with preview sizes
+  //   offered by the camera and the closest preview ratio is selected, for instance
+  //   1280x720 (1.777 ratio). The ratio discrepancy will result either
+  //   - in fitting the picture inside the preview (FIT_IN = true) resulting in
+  //     centered image with black stripes filling the area, or
+  //   - in filling the available screen with two sides of the image 'overflowing'
+  //     resulting in final image larger the visible on the streen
+  static final boolean FIT_IN = true; // letterbox / pan&scan(overflowing) preview
+
+  // IMAGE_QUAL camera delivers the image as a byte array (JPEG-compressed).
+  //   The IMAGE_QUAL (0...100) sets the desired compression / quality ratio.
+  static final int IMAGE_QUAL = 90;   // desired jpeg quality from the camera
 
   private static final String L_TG = "A_S";
   private static final String E_TG = L_TG;
 
-  // cam preview ratio may differ from final picture ratio, i.e. it will:
-  // - FIT_IN ... will have black stripes on sides
-  // - FIT_OUT ... part of the picture will overflow the screen
-  static final boolean FIT_IN = true;
-  static final int IMAGE_SZ = 1600;  // 0 for preview area, else  1200, 1600, 2048 ... envelopes;
-  static final int IMAGE_QUAL = 90;
+  private static UT  mInst;
+  static Context acx;
+  static boolean isLandTab;  //N7-I(Nexus7-1stGen), PD10 have LAND default, N7-II, SAMS have PORT
+  static UT init(Context ctx, Activity act) {
+    if (mInst == null) {
+      acx = ctx.getApplicationContext();
+      if (act != null) {
+        isLandTab = getTabType(act);
+      }
+      mInst = new UT();                                         //lg("img cache " + ccheSz);
+    }
+    return mInst;
+  }
+
+  static int getDegs(int rot) {   //TAB sensing handle the N7-I, N10, PD10 tablets
+    int degs = 0;
+    switch (rot) {
+      case Surface.ROTATION_0:      degs =  90;    break;
+      case Surface.ROTATION_180:    degs = 270;    break;
+      case Surface.ROTATION_270:    degs = 180;    break;
+    }
+    if (isLandTab) {  // NEX7(1st gen), PD10
+      degs = (degs + 270) % 360;   //deduct 90, limit to  0...360
+    }
+    return degs;
+  }
+
+  static Bitmap getRotBM(byte[] buf, int rot) {
+    Bitmap bm = null;
+    if (buf != null) try {
+      bm = rotBM(BitmapFactory.decodeByteArray(buf, 0, buf.length), getDegs(rot));
+    } catch (OutOfMemoryError oom) { System.gc(); }
+    catch (Exception e) { le(e); }
+    return bm;
+  }
+  private static Bitmap rotBM(Bitmap src, float degs) {
+    if (degs == 0) return src;
+    Bitmap bm = null;
+    if (src != null) {
+      Matrix matrix = new Matrix();
+      matrix.postRotate(degs);
+      bm = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
+    }
+    return bm;
+  }
 
   static boolean getTabType(Activity act) {
     Display dsp = act.getWindowManager().getDefaultDisplay();
@@ -59,7 +101,6 @@ final class UT {   private UT() {}    // singleton pattern
     return (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) ?
      (dispSz.x < dispSz.y) : (dispSz.x > dispSz.y);
   }
-
   static int getOri(Activity act) {    // returns 0,1,8,9  (SCREEN_ORIENTATION_...)
     Display dsp = act.getWindowManager().getDefaultDisplay();
     Point dispSz = new Point();
@@ -99,39 +140,6 @@ final class UT {   private UT() {}    // singleton pattern
     }
     return ori;
   }
-
-  static int getDegs(int rot) {   //TAB sensing handle the N7-I, N10, PD10 tablets
-    int degs = 0;
-    switch (rot) {
-      case Surface.ROTATION_0:      degs =  90;    break;
-      case Surface.ROTATION_180:    degs = 270;    break;
-      case Surface.ROTATION_270:    degs = 180;    break;
-    }
-    if (isLandTab) {  // NEX7(1st gen), PD10
-      degs = (degs + 270) % 360;   //deduct 90, limit to  0...360
-    }
-    return degs;
-  }
-
-  static Bitmap getRotBM(byte[] buf, int rot) {
-    Bitmap bm = null;
-    if (buf != null) try {
-      bm = rotBM(BitmapFactory.decodeByteArray(buf, 0, buf.length), getDegs(rot));
-    } catch (OutOfMemoryError oom) { System.gc(); }
-    catch (Exception e) { le(e); }
-    return bm;
-  }
-
-  private static Bitmap rotBM(Bitmap src, float degs) {
-    if (degs == 0) return src;
-    if (src != null) {
-      Matrix matrix = new Matrix();
-      matrix.postRotate(degs);
-      return Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
-    }
-    return null;
-  }
-
   static int lockRot(Activity act, int ori) {      // returns 0,1,2,3  (Surface.ROTATION_...)
     act.setRequestedOrientation(ori);
     return act.getWindowManager().getDefaultDisplay().getRotation();
@@ -157,8 +165,9 @@ final class UT {   private UT() {}    // singleton pattern
       String err = (ex == null || ex.getMessage() == null) ? "?" : ex.getMessage();
       msg = (msg == null) ? err : msg + (": " + err);
       Log.e(E_TG, msg + "\n " + stack2String(ex));
-    } catch (Exception e) {}   // ignore by design
+    } catch (Exception e) {ig();}   // igno re by design
   }
+  private static void ig(){}
   static void le(Throwable ex) {leX (ex, null);}
   static void lg(String msg) {logX(msg, false);}
 }

@@ -10,68 +10,64 @@ package com.andyscan.andycam;
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-//endregion
+// endregion
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.view.Gravity;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 final class CamVw extends SurfaceView implements SurfaceHolder.Callback {
-  private MainActivity mAct;
-  private SurfaceView mSv;
-  private static int mRot;      // Surface.ROTATION_0, Surface.ROTATION_90, ...
-  private static float mRatio;
-  CamVw(Context act) { super(act);}
 
-  CamVw(MainActivity act, SurfaceView sv, int rot) { this(act);
-    mAct = act;
+  private CamActivity mCamAct;
+  private SurfaceView mSv;
+  private static int mRot;      // Surface.ROTATION_0, Surface.ROTATION_90, .....
+
+  CamVw(Context act) { super(act);  }
+
+  CamVw(CamActivity act, SurfaceView sv, int rot) {  this(act);
+    mCamAct = act;
     mSv = sv;
     mRot = rot;
     CamMgr.init(this, sv);
   }
 
   public void onPicTaken(byte[] buf) {
-    Bitmap bm = UT.getRotBM(buf, mRot);
-    if (bm != null)
-      Toast.makeText(mAct, "picture "+bm.getWidth()+"x"+bm.getHeight(), Toast.LENGTH_LONG).show();
-    mAct.onPicTaken(bm);
+    final Bitmap bm = UT.getRotBM(buf, mRot);      //UT.lg(""+bm.getWidth()+" "+bm.getHeight());
+    mCamAct.onPicTaken(bm);
   }
 
   @Override
-  public void surfaceChanged(SurfaceHolder sh, int fmt, int wid, int hei){
-    float oldRat = (float)wid/hei;      //UT.lg("_");UT.lg("" + wid + "x" + hei + " " + oldRat);
-    if (sh.getSurface() != null && Math.abs(mRatio - oldRat) > 0.03f) {
-      CamMgr.preview(false);
-
+  public void surfaceChanged(SurfaceHolder sh, int fmt, int wid, int hei) {
+    if (sh.getSurface() != null) {
       // CAM sizes always come in LAND, whereas width,height is PORT/LAND based on rotation.
       // so, in PORT, we may get 480x800, but mCam params list show 800x480, 640x320, ...
-      boolean bSwap = wid < hei;
-      if (bSwap) { int tmp = hei; hei = wid; wid = tmp; }
+      boolean swap = (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180);
+      if (swap) { int tmp = hei; hei = wid; wid = tmp; }  // UT.lg("_ in " + wid + "x" + hei);
 
-      oldRat = (float)wid/hei;                //UT.lg("in " + wid + "x" + hei + " " + oldRat);
+      float oldRat = (float) wid / hei;
       float newRat = CamMgr.setCamera(sh, wid, hei, UT.getDegs(mRot));
-      if (newRat != 0.0f && Math.abs(newRat-oldRat) > 0.03f) {
-        if (UT.FIT_IN) {
-          if (oldRat < newRat) hei = (int)((oldRat * hei) / newRat);
-          else                 wid = (int)((newRat * wid) / oldRat);
-        } else {
-          if (oldRat > newRat) hei = (int)((oldRat * hei) / newRat);
-          else                 wid = (int)((newRat * wid) / oldRat);
-        }
-        mRatio = (float)wid/hei;             //UT.lg("out " + wid + "x" + hei + " " + mRatio);
-        if (bSwap) {int tmp = hei; hei = wid; wid = tmp;}
+      if (newRat != 0.0f && Math.abs(newRat - oldRat) > 0.03f) {  //UT.lg("rat "+oldRat+":"+newRat);
+        if (UT.FIT_IN) {    // FIT-IN preview
+          if (oldRat < newRat) hei = (int) ((oldRat * hei) / newRat);
+          else wid = (int) ((newRat * wid) / oldRat);
+        } else {                   // FIT-IN preview
+          if (oldRat > newRat) hei = (int) ((oldRat * hei) / newRat);
+          else wid = (int) ((newRat * wid) / oldRat);
+        }                                                           //UT.lg("set "+wid+"x"+hei);
+        if (swap) { int tmp = hei; hei = wid; wid = tmp; }
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(wid, hei);
         lp.gravity = Gravity.CENTER;
         mSv.setLayoutParams(lp);
-      }                                                    //else UT.lg("cool");
-      Toast.makeText(mAct, "preview " + wid + "x" + hei, Toast.LENGTH_LONG).show();
+      }                                                             //else UT.lg("is cool");
     }
   }
-
-  @Override public void surfaceCreated(SurfaceHolder sh) {CamMgr.setHolder(sh);  }
+  @Override
+  public void surfaceCreated(SurfaceHolder sh) {
+    CamMgr.setHolder(sh);
+  }
   @Override public void surfaceDestroyed(SurfaceHolder sh) {}
 }

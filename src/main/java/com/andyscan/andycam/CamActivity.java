@@ -23,8 +23,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity{
-  private int mRot;      // Surface.ROTATION_0, Surface.ROTATION_90,  ... (0,1,2,3)
+public class CamActivity extends Activity{
   private SurfaceView mCamSV;    // these two views are switched
   private ImageView   mImgVw;    // these two views are switched
 
@@ -36,14 +35,14 @@ public class MainActivity extends Activity{
       finish();  return; //---suicide ------------------->>>
     }
 
-    mRot = UT.lockRot(this, UT.getOri(this));  //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    int rot = UT.lockRot(this, UT.getOri(this));  //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
     setContentView(R.layout.activity_main);
 
     mCamSV = (SurfaceView)findViewById(R.id.sv_cam);
     mCamSV.setVisibility(View.VISIBLE);
     mImgVw = (ImageView)findViewById(R.id.iv_img);
     mImgVw.setVisibility(View.GONE);
-    new CamVw(this, mCamSV, mRot);
+    new CamVw(this, mCamSV, rot);
   }
 
   @Override
@@ -76,9 +75,10 @@ public class MainActivity extends Activity{
   }
 
   public void onPicTaken(Bitmap bm) {
-    CamMgr.preview(false);
     mCamSV.setVisibility(View.GONE);
     mImgVw.setVisibility(View.VISIBLE);
     mImgVw.setImageBitmap(bm);
+    if (bm != null)
+      Toast.makeText(this, "" + bm.getWidth() + "x" + bm.getHeight(), Toast.LENGTH_LONG).show();
   }
 }

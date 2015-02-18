@@ -10,11 +10,12 @@ package com.andyscan.andycam;
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-//endregion
+// endregion
 
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -38,53 +39,43 @@ final class CamMgr {   private CamMgr(){}
     mSurfHolder.addCallback(camVw);
   }
 
-  static void open() {  // call from RESUME
-    if (mCamera != null) return;
-    try { mCamera = Camera.open();                                      //UT.lg("cam opened ");
-    } catch (Exception e) {UT.le(e);}
-    if (mCamera == null) try {  // OUCH !!!
-      Method m = Camera.class.getMethod("open", Integer.TYPE);
-      mCamera = (Camera)m.invoke(null, 0);                        //UT.lg("on second attempt");
-    } catch (Exception e) {UT.le(e);}
+  static void open() {  // called from RESUME
+    if (mCamera == null) {   // don't re-open
+      try {
+        mCamera = Camera.open();                                      //UT.lg("cam opened ");
+      } catch (Exception e) {UT.le(e);}
+      if (mCamera == null) try {  // OUCH !!!
+        Method m = Camera.class.getMethod("open", Integer.TYPE);
+        mCamera = (Camera)m.invoke(null, 0);                       //UT.lg("on second attempt");
+      } catch (Exception e) {UT.le(e);}
+    }
   }
 
-  static void close() {    // call from PAUSE to release the camera for use by other apps
+  static void close() {  // called from PAUSE to release the camera for use by other apps
     if (mCamera != null) {
-      preview(false);
+      preVw(false);
       mCamera.release();
       mCamera = null;                                              //UT.lg("cam closed");
     }
   }
 
-  static void preview(boolean bOn) {
-    if (mCamera != null) {
-      if (bOn) {
-        if (!mIsPreVw) {
-          mCamera.startPreview();                                     //UT.lg("prev started");
-          mIsPreVw = true;
-        }
-      } else {
-        if (mIsPreVw) {
-          mCamera.stopPreview();                                      //UT.lg("prev stopped");
-          mIsPreVw = false;
-        }
-      }
-    }
-  }
-
   static void snapPic() {
-    if (mCamera == null || mIsBusy) return;  //----------------->>>>
-    mIsBusy = true;
-    mCamera.autoFocus(new Camera.AutoFocusCallback() {
-      @Override public void onAutoFocus(boolean bSuccess, Camera cam) {                               //UT.lg("focused );
-        mCamera.takePicture(null, null, new Camera.PictureCallback() {
-          @Override public void onPictureTaken(final byte[] data, Camera cam) {
-            mCamVw.onPicTaken(data.clone());                              //UT.lg("pic taken");
-            mIsBusy = false;
-          }
-        });
-      }
-    });
+    if (mCamera != null && mIsPreVw && !mIsBusy) try {                           //UT.lg("ready");
+      mIsBusy = true;
+      mCamera.autoFocus(new Camera.AutoFocusCallback() {
+        @Override
+        public void onAutoFocus(boolean bSuccess, Camera cam) {                                    //UT.lg("focused");
+          mCamera.takePicture(null, null, new Camera.PictureCallback() {
+            @Override
+            public void onPictureTaken(final byte[] data, Camera cam) {
+              preVw(false);
+              mCamVw.onPicTaken(data.clone());                    //UT.lg("taken " + data.length);
+              mIsBusy = false;
+            }
+          });
+        }
+      });
+    }catch (Exception e) {UT.le(e);}
   }
 
   static void setHolder(SurfaceHolder sh) { mSurfHolder = sh; }
@@ -92,7 +83,8 @@ final class CamMgr {   private CamMgr(){}
   static float setCamera(SurfaceHolder surfHldr, int wid, int hei, int orient) {
     float ratio = 0.0f;
     if (mCamera != null) try {
-      Camera.Parameters prms = mCamera.getParameters();  //UT.lg("\n"+wid+"x"+hei+" "+(float)wid/hei);
+      preVw(false);
+      Parameters prms = mCamera.getParameters();    //UT.lg(""+wid+"x"+hei+" "+(float)wid/hei);
 
       Camera.Size picSz = pictSz(prms.getSupportedPictureSizes(), wid, hei, UT.IMAGE_SZ);
       if (picSz != null) {
@@ -105,8 +97,8 @@ final class CamMgr {   private CamMgr(){}
       }
 
       if (UT.acx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)){
-        if (!prms.getFocusMode().equals(Camera.Parameters.FOCUS_MODE_AUTO)) {
-          prms.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        if (!prms.getFocusMode().equals(Parameters.FOCUS_MODE_AUTO)) {
+          prms.setFocusMode(Parameters.FOCUS_MODE_AUTO);
         }
         if (prms.getMaxNumFocusAreas() > 0){ // check that metering areas are supported
           List<Camera.Area> focusAreas = new ArrayList<>();
@@ -122,19 +114,20 @@ final class CamMgr {   private CamMgr(){}
       mCamera.setDisplayOrientation(orient);
       mCamera.setPreviewDisplay(surfHldr);
 
-      preview(true);
+      preVw(true);
     } catch (Exception e) {UT.le(e);}
     return ratio;
   }
+
   private static Camera.Size pictSz(List<Camera.Size> sizes, int wid, int hei, int imgSz) {
-    if (sizes != null && (wid * hei) != 0) {                      //String dump = "";
+    if (sizes != null && (wid * hei) != 0) {                      //String allSzs = "";
       // required area is the preview area  if not explicitly requested by 'img size'  envelope
       int reqSz = (imgSz == 0 ) ?
-                (wid * hei) : imgSz * (wid > hei ? (imgSz * hei) / wid : (imgSz * wid) / hei);
+       (wid * hei) : imgSz * (wid > hei ? (imgSz * hei) / wid : (imgSz * wid) / hei);
       Camera.Size posOptimSz = null, negOptimSz = null;
       int posDiff = +Integer.MAX_VALUE;
       int negDiff = -Integer.MAX_VALUE;
-      for (Camera.Size size : sizes) {         //dump += (" " + size.width + "x" + size.height);
+      for (Camera.Size size : sizes) {         //allSzs += (" " + size.width + "x" + size.height);
         int curSz = size.width * size.height;
         int diff = curSz - reqSz;
         if (diff >= 0) {
@@ -148,27 +141,28 @@ final class CamMgr {   private CamMgr(){}
             negOptimSz = size;                  //UT.lg("smaller " + sz.width + "x" + sz.height);
           }
         }
-      }                                                             // UT.lg("P" + dump);
+      }                                                             // UT.lg("P" + allSzs);
       return posOptimSz != null ?  posOptimSz : negOptimSz;    // preferring closest larger
     }
     return null;
   }
+
   private static Camera.Size prvwSz(List<Camera.Size> sizes, int wid, int hei) {
     Camera.Size sz = null;
-    if (sizes != null && (wid * hei) != 0) {                          //String dump = "";
+    if (sizes != null && (wid * hei) != 0) {                          //String allSzs = "";
       float wantRat = (float)wid / hei;        //UT.lg("d: " + wid + "x" + hei + " " + dispRat);
 
       // first step, get the closest ratio
       float minFDiff = Float.MAX_VALUE;
       float minRat = 0;
-      for (Camera.Size size : sizes) {         //dump += (" " + size.width + "x" + size.height);
+      for (Camera.Size size : sizes) {         //allSzs += (" " + size.width + "x" + size.height);
         float hasRat = (float)size.width / size.height;
         float ratDif = Math.abs(hasRat - wantRat);
         if (ratDif < minFDiff) {
           minFDiff = ratDif;
           minRat = hasRat;
         }
-      }                                                            //UT.lg("C" + dump);
+      }                                                            //UT.lg("C" + allSzs);
       // for every item close to ratio (+/- 8%), find the closest size match
       int reqSz = hei * wid;
       int minIDiff = Integer.MAX_VALUE;
@@ -185,4 +179,21 @@ final class CamMgr {   private CamMgr(){}
     }
     return sz;
   }
+
+  private static void preVw(boolean bOn) {
+    if (mCamera != null) {
+      if (bOn) {
+        if (!mIsPreVw) {
+          mCamera.startPreview();                                   //UT.lg("turn started");
+          mIsPreVw = true;
+        }
+      } else {
+        if (mIsPreVw) {
+          mCamera.stopPreview();                                   //UT.lg("turn stopped");
+          mIsPreVw = false;
+        }
+      }
+    }
+  }
 }
+
