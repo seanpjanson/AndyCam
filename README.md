@@ -6,7 +6,7 @@ in both the preview and the picture creation phase, etc...
 Logic:
 If you need to produce a picture from the Android camera, you have to tackle
 the fact that it is the camera that tells you what it can produce, and you as a
-developer have to combine the offerings into a final result.
+developer have to combine the offerings into the final result.
 
 First, let's say you need a picture of size 1600x1200 pixels. The camera gives
 you a list of what is available and you have to decide what to pick. Closest ratio
@@ -25,18 +25,19 @@ conundrum is being resolved (sort-of) in the CamMgr.prvwSz() method.
 Now, you finally have your preview / picture sizes and you have to decide if the preview
 size you chose should be letterboxed or pan&scanned (fancy names for fitting two 
 rectangles of different size ratios). Letterbox, or fit-in will fit all your image into
-the preview, leaving black (or whatever background color you you have) stripes on sides.
+the preview rectangle, leaving background colored stripes on two sides.
 Pan&Scan mode will fill the screen, letting the image 'overflow' on sides.
 
 The parameters mentioned here can be pre-set in the UT (utility) class.
 
-The code itself has a lot of unrelated fluff, since device orientation can change,
-but the camera communicates in landscape mode (list of offered preview / picture sizes).
-So the preview must be pre-rotated and the resulting picture 'rotated back'. There are
-also issues related to 'natural device orientation', where some tablets 
-(Nexus7-1Gen, Nexus10,...) have default orientation landscape-wide, where other tablets
-(Samsung TAB 7,8, Nexus 7, ...) behave like large phones, (default orientation tall) 
-with added REVERSE PORTRAIT mode (most of standard phones do not have reverse portrait
-mode).
+The code here has a lot of fluff, since it has to deal with a lot of additional issues:
+Device orientation can change, but the camera communicates in landscape mode 
+(list of offered preview / picture sizes). So the preview must be pre-rotated and the
+resulting picture 'rotated back'. 
+There are also issues related to 'natural device orientation', where some tablets 
+(Nexus7-1Gen, Nexus10,...) have default orientation landscape(wide), where other tablets
+(Samsung TAB 7,8, Nexus 7-2Gen, ...) behave like large phones, (default orientation
+portrait) with added REVERSE PORTRAIT mode (most of standard phones do not have reverse
+portrait mode).
 
 Please let me know what the behavior is on your device if you run into trouble.
