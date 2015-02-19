@@ -30,8 +30,8 @@ final class CamMgr {   private CamMgr(){}
   private static Camera mCamera;
   private static SurfaceHolder mSurfHolder;
 
-  static boolean mIsBusy;
-  static boolean mIsPreVw;
+  private static boolean mIsBusy;
+  private static boolean mIsPreVw;
 
   static void init (CamVw camVw, SurfaceView sv){
     mCamVw = camVw;
@@ -53,7 +53,7 @@ final class CamMgr {   private CamMgr(){}
 
   static void close() {  // called from PAUSE to release the camera for use by other apps
     if (mCamera != null) {
-      preVw(false);
+      preview(false);
       mCamera.release();
       mCamera = null;                                              //UT.lg("cam closed");
     }
@@ -68,7 +68,7 @@ final class CamMgr {   private CamMgr(){}
           mCamera.takePicture(null, null, new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(final byte[] data, Camera cam) {
-              preVw(false);
+              preview(false);
               mCamVw.onPicTaken(data.clone());                    //UT.lg("taken " + data.length);
               mIsBusy = false;
             }
@@ -83,7 +83,7 @@ final class CamMgr {   private CamMgr(){}
   static float setCamera(SurfaceHolder surfHldr, int wid, int hei, int orient) {
     float ratio = 0.0f;
     if (mCamera != null) try {
-      preVw(false);
+      preview(false);
       Parameters prms = mCamera.getParameters();    //UT.lg(""+wid+"x"+hei+" "+(float)wid/hei);
 
       Camera.Size picSz = pictSz(prms.getSupportedPictureSizes(), wid, hei, UT.IMAGE_SZ);
@@ -114,7 +114,7 @@ final class CamMgr {   private CamMgr(){}
       mCamera.setDisplayOrientation(orient);
       mCamera.setPreviewDisplay(surfHldr);
 
-      preVw(true);
+      preview(true);
     } catch (Exception e) {UT.le(e);}
     return ratio;
   }
@@ -180,7 +180,7 @@ final class CamMgr {   private CamMgr(){}
     return sz;
   }
 
-  private static void preVw(boolean bOn) {
+  private static void preview(boolean bOn) {
     if (mCamera != null) {
       if (bOn) {
         if (!mIsPreVw) {

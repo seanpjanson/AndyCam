@@ -49,13 +49,12 @@ final class UT {   private UT() {}
 
   private static UT  mInst;
   static Context acx;
-  static boolean isLandTab;  //N7-I(Nexus7-1stGen), PD10 have LAND default, N7-II, SAMS have PORT
+  //N7-I(Nexus7-1stGen), PD10 have LAND default, N7-II, SAMS have PORT
+  private static boolean isLandTab;
   static UT init(Context ctx, Activity act) {
     if (mInst == null) {
       acx = ctx.getApplicationContext();
-      if (act != null) {
-        isLandTab = getTabType(act);
-      }
+      isLandTab = (act != null) && getTabType(act);
       mInst = new UT();                                         //lg("img cache " + ccheSz);
     }
     return mInst;
@@ -93,7 +92,7 @@ final class UT {   private UT() {}
     return bm;
   }
 
-  static boolean getTabType(Activity act) {
+  private static boolean getTabType(Activity act) {
     Display dsp = act.getWindowManager().getDefaultDisplay();
     Point dispSz = new Point();
     dsp.getSize(dispSz);
@@ -165,9 +164,8 @@ final class UT {   private UT() {}
       String err = (ex == null || ex.getMessage() == null) ? "?" : ex.getMessage();
       msg = (msg == null) ? err : msg + (": " + err);
       Log.e(E_TG, msg + "\n " + stack2String(ex));
-    } catch (Exception e) {ig();}   // igno re by design
+    } catch (Exception ignored){}
   }
-  private static void ig(){}
   static void le(Throwable ex) {leX (ex, null);}
   static void lg(String msg) {logX(msg, false);}
 }
