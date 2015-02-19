@@ -20,24 +20,26 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.FrameLayout;
 
-final class CamVw extends SurfaceView implements SurfaceHolder.Callback {
+final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.CB {
+  interface CB {  void onPicTaken(Bitmap bm); }
 
-  private CamActivity mCamAct;
+  private CB mCamActCB;
   private SurfaceView mSv;
   private static int mRot;      // Surface.ROTATION_0, Surface.ROTATION_90, .....
 
   CamVw(Context act) { super(act);  }
 
   CamVw(CamActivity act, SurfaceView sv, int rot) {  this(act);
-    mCamAct = act;
+    mCamActCB = act;
     mSv = sv;
     mRot = rot;
     CamMgr.init(this, sv);
   }
 
+  @Override
   public void onPicTaken(byte[] buf) {
     final Bitmap bm = UT.getRotBM(buf, mRot);      //UT.lg(""+bm.getWidth()+" "+bm.getHeight());
-    mCamAct.onPicTaken(bm);
+    mCamActCB.onPicTaken(bm);
   }
 
   @Override

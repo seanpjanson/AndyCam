@@ -23,7 +23,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class CamActivity extends Activity{
+public class CamActivity extends Activity implements CamVw.CB {
   private SurfaceView mCamSV;    // these two views are switched
   private ImageView   mImgVw;    // these two views are switched
 
@@ -74,11 +74,12 @@ public class CamActivity extends Activity{
     return super.onOptionsItemSelected(item);
   }
 
+  @Override
   public void onPicTaken(Bitmap bm) {
-    mCamSV.setVisibility(View.GONE);
-    mImgVw.setVisibility(View.VISIBLE);
-    mImgVw.setImageBitmap(bm);
-    if (bm != null)
-      Toast.makeText(this, "" + bm.getWidth() + "x" + bm.getHeight(), Toast.LENGTH_LONG).show();
-  }
+      mCamSV.setVisibility(View.GONE);
+      mImgVw.setVisibility(View.VISIBLE);
+      mImgVw.setImageBitmap(bm);
+      if (bm != null)
+        Toast.makeText(this, "" + bm.getWidth() + "x" + bm.getHeight(), Toast.LENGTH_LONG).show();
+    }
 }

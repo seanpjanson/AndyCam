@@ -25,8 +25,9 @@ import java.util.List;
 
 @SuppressWarnings("deprecation")
 final class CamMgr {   private CamMgr(){}
+  interface CB {void onPicTaken(byte[] buf);}
 
-  private static CamVw mCamVw;
+  private static CB mCamVwCB;
   private static Camera mCamera;
   private static SurfaceHolder mSurfHolder;
 
@@ -34,7 +35,7 @@ final class CamMgr {   private CamMgr(){}
   private static boolean mIsPreVw;
 
   static void init (CamVw camVw, SurfaceView sv){
-    mCamVw = camVw;
+    mCamVwCB = camVw;
     mSurfHolder = sv.getHolder();
     mSurfHolder.addCallback(camVw);
   }
@@ -69,7 +70,7 @@ final class CamMgr {   private CamMgr(){}
             @Override
             public void onPictureTaken(final byte[] data, Camera cam) {
               preview(false);
-              mCamVw.onPicTaken(data.clone());                    //UT.lg("taken " + data.length);
+              mCamVwCB.onPicTaken(data.clone());                  //UT.lg("taken " + data.length);
               mIsBusy = false;
             }
           });
