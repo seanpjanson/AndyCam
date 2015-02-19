@@ -31,9 +31,11 @@ Pan&Scan mode will fill the screen, letting the image 'overflow' on sides.
 The parameters mentioned here can be pre-set in the UT (utility) class.
 
 The code here has a lot of fluff, since it has to deal with a lot of additional issues:
+
 Device orientation can change, but the camera communicates in landscape mode 
 (list of offered preview / picture sizes). So the preview must be pre-rotated and the
-resulting picture 'rotated back'. 
+resulting picture 'rotated back'.
+
 There are also issues related to 'natural device orientation', where some tablets 
 (Nexus7-1Gen, Nexus10,...) have default orientation landscape(wide), where other tablets
 (Samsung TAB 7,8, Nexus 7-2Gen, ...) behave like large phones, (default orientation
