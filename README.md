@@ -1,7 +1,7 @@
 # AndyCam
 is a custom camera project resulting from numerous questions on StackOverflow. 
 It attempts to address the issues with preview orientation, stretching of images
-in both the preview and the picture phase, etc.
+in both the preview and the picture creation phase, etc...
 
 Logic:
 If you need to produce a picture from the Android camera, you have to tackle
