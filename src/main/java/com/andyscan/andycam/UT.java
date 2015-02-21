@@ -51,10 +51,17 @@ final class UT {   private UT() {}
   static Context acx;
   //N7-I(Nexus7-1stGen), PD10 have LAND default, N7-II, SAMS have PORT
   private static boolean isLandTab;
+  static Point screenSz;      // needed for focus point
   static UT init(Context ctx, Activity act) {
     if (mInst == null) {
       acx = ctx.getApplicationContext();
-      isLandTab = (act != null) && getTabType(act);
+      if (act != null) {
+        Display dsp = act.getWindowManager().getDefaultDisplay();
+        dsp.getSize(screenSz = new Point());
+        int rot = dsp.getRotation();
+        isLandTab = (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) ?
+         (screenSz.x < screenSz.y) : (screenSz.x > screenSz.y);
+      }
       mInst = new UT();                                         //lg("img cache " + ccheSz);
     }
     return mInst;
@@ -92,14 +99,6 @@ final class UT {   private UT() {}
     return bm;
   }
 
-  private static boolean getTabType(Activity act) {
-    Display dsp = act.getWindowManager().getDefaultDisplay();
-    Point dispSz = new Point();
-    dsp.getSize(dispSz);
-    int rot = dsp.getRotation();
-    return (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) ?
-     (dispSz.x < dispSz.y) : (dispSz.x > dispSz.y);
-  }
   static int getOri(Activity act) {    // returns 0,1,8,9  (SCREEN_ORIENTATION_...)
     Display dsp = act.getWindowManager().getDefaultDisplay();
     Point dispSz = new Point();

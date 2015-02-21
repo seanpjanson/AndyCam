@@ -14,6 +14,7 @@ package com.andyscan.andycam;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.view.Gravity;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -21,11 +22,14 @@ import android.view.SurfaceView;
 import android.widget.FrameLayout;
 
 final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.CB {
-  interface CB {  void onPicTaken(Bitmap bm); }
+  interface CB {
+    void onPicTaken(Bitmap bm);
+    void onZoom(Rect focArea);
+  }
 
   private CB mCamActCB;
   private SurfaceView mSv;
-  private static int mRot;      // Surface.ROTATION_0, Surface.ROTATION_90, .....
+  private int mRot;      // Surface.ROTATION_0, Surface.ROTATION_90, .....
 
   CamVw(Context act) { super(act);  }
 
@@ -43,15 +47,18 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.
   }
 
   @Override
+  public void onZoom(Rect focArea) { mCamActCB.onZoom(focArea); }
+
+  @Override
   public void surfaceChanged(SurfaceHolder sh, int fmt, int wid, int hei) {
     if (sh.getSurface() != null) {
       // CAM sizes always come in LAND, whereas width,height is PORT/LAND based on rotation.
       // so, in PORT, we may get 480x800, but mCam params list show 800x480, 640x320, ...
-      boolean swap = (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180);
-      if (swap) { int tmp = hei; hei = wid; wid = tmp; }  // UT.lg("_ in " + wid + "x" + hei);
+      boolean isSwapped = (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180);
+      if (isSwapped) { int tmp = hei; hei = wid; wid = tmp; }  // UT.lg("_ in " + wid + "x" + hei);
 
       float oldRat = (float) wid / hei;
-      float newRat = CamMgr.setCamera(sh, wid, hei, UT.getDegs(mRot));
+      float newRat = CamMgr.setCamera(sh, wid, hei, mRot);
       if (newRat != 0.0f && Math.abs(newRat - oldRat) > 0.03f) {  //UT.lg("rat "+oldRat+":"+newRat);
         if (UT.FIT_IN) {    // FIT-IN preview
           if (oldRat < newRat) hei = (int) ((oldRat * hei) / newRat);
@@ -60,7 +67,7 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.
           if (oldRat > newRat) hei = (int) ((oldRat * hei) / newRat);
           else wid = (int) ((newRat * wid) / oldRat);
         }                                                           //UT.lg("set "+wid+"x"+hei);
-        if (swap) { int tmp = hei; hei = wid; wid = tmp; }
+        if (isSwapped) { int tmp = hei; hei = wid; wid = tmp; }
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(wid, hei);
         lp.gravity = Gravity.CENTER;
         mSv.setLayoutParams(lp);

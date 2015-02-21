@@ -13,9 +13,11 @@ package com.andyscan.andycam;
 // endregion
 
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -25,7 +27,11 @@ import java.util.List;
 
 @SuppressWarnings("deprecation")
 final class CamMgr {   private CamMgr(){}
-  interface CB {void onPicTaken(byte[] buf);}
+  interface CB {
+    void onPicTaken(byte[] buf);
+    void onZoom(Rect focRect);
+  }
+
 
   private static CB mCamVwCB;
   private static Camera mCamera;
@@ -33,6 +39,9 @@ final class CamMgr {   private CamMgr(){}
 
   private static boolean mIsBusy;
   private static boolean mIsPreVw;
+
+  private static Rect mFocRect;  // abused as a 'focus possible' flag
+  private static int mRot;      // Surface.ROTATION_0, Surface.ROTATION_90, .....
 
   static void init (CamVw camVw, SurfaceView sv){
     mCamVwCB = camVw;
@@ -60,28 +69,61 @@ final class CamMgr {   private CamMgr(){}
     }
   }
 
-  static void snapPic() {
-    if (mCamera != null && mIsPreVw && !mIsBusy) try {                           //UT.lg("ready");
+  static boolean snapPic(Point tp) {
+    if (mCamera != null && mIsPreVw && !mIsBusy) {                           //UT.lg("ready");
       mIsBusy = true;
-      mCamera.autoFocus(new Camera.AutoFocusCallback() {
-        @Override
-        public void onAutoFocus(boolean bSuccess, Camera cam) {                                    //UT.lg("focused");
-          mCamera.takePicture(null, null, new Camera.PictureCallback() {
-            @Override
-            public void onPictureTaken(final byte[] data, Camera cam) {
-              preview(false);
-              mCamVwCB.onPicTaken(data.clone());                  //UT.lg("taken " + data.length);
-              mIsBusy = false;
-            }
-          });
-        }
-      });
-    }catch (Exception e) {UT.le(e);}
+
+      //focusing dance only if focusable
+      if (mFocRect != null) try {
+        Parameters prms = mCamera.getParameters();    //UT.lg(""+wid+"x"+hei+" "+(float)wid/hei);
+        List<Camera.Area> focusAreas = new ArrayList<>();
+        focusAreas.add(new Camera.Area(mFocRect = focusArea(tp), 1000));  //UT.lg("" + mFocRect);
+        prms.setMeteringAreas(focusAreas);
+        mCamera.setParameters(prms);
+
+        mCamVwCB.onZoom(mFocRect);
+        mCamera.autoFocus(new Camera.AutoFocusCallback() {
+          @Override
+          public void onAutoFocus(boolean bSuccess, Camera cam) {           //UT.lg("focused");
+            mCamVwCB.onZoom(null);
+            mCamera.takePicture(null, null, new Camera.PictureCallback() {
+              @Override
+              public void onPictureTaken(final byte[] data, Camera cam) {
+                preview(false);
+                mCamVwCB.onPicTaken(data.clone());            //UT.lg("taken " + data.length);
+              }
+            });
+          }
+        });
+        return true;  //-------------------------------->>>
+      } catch (Exception e) {UT.le(e);}
+      finally {
+        mIsBusy = false;
+      }
+
+      // no focusing if not set / available
+      try {
+        mCamera.takePicture(null, null, new Camera.PictureCallback() {
+          @Override
+          public void onPictureTaken(final byte[] data, Camera cam) {
+            preview(false);
+            mCamVwCB.onPicTaken(data.clone());                  //UT.lg("taken " + data.length);
+          }
+        });
+        return true; //------------------------------>>>
+      } catch (Exception e) {UT.le(e);}
+      finally {
+        mIsBusy = false;
+      }
+    }
+    return false;
   }
 
   static void setHolder(SurfaceHolder sh) { mSurfHolder = sh; }
 
-  static float setCamera(SurfaceHolder surfHldr, int wid, int hei, int orient) {
+  static float setCamera(SurfaceHolder surfHldr, int wid, int hei, int rot) {
+    mRot = rot;
+
     float ratio = 0.0f;
     if (mCamera != null) try {
       preview(false);
@@ -102,8 +144,9 @@ final class CamMgr {   private CamMgr(){}
           prms.setFocusMode(Parameters.FOCUS_MODE_AUTO);
         }
         if (prms.getMaxNumFocusAreas() > 0){ // check that metering areas are supported
+          mFocRect = new Rect(-200, -200, 200, 200);
           List<Camera.Area> focusAreas = new ArrayList<>();
-          focusAreas.add(new Camera.Area(new Rect(-300, -300, 300, 300), 1000));
+          focusAreas.add(new Camera.Area(mFocRect, 1000));
           prms.setMeteringAreas(focusAreas);
         }
       }
@@ -112,7 +155,7 @@ final class CamMgr {   private CamMgr(){}
 
       mCamera.setParameters(prms);
 
-      mCamera.setDisplayOrientation(orient);
+      mCamera.setDisplayOrientation(UT.getDegs(mRot));
       mCamera.setPreviewDisplay(surfHldr);
 
       preview(true);
@@ -195,6 +238,23 @@ final class CamMgr {   private CamMgr(){}
         }
       }
     }
+  }
+
+  private static Rect focusArea(Point tp) {
+    int wid, hei;
+    if  (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180) {         //UT.lg("PORT");
+      wid = UT.screenSz.y;
+      hei = UT.screenSz.x;
+    } else {                                                                   //UT.lg("LAND");
+      wid = UT.screenSz.x;
+      hei = UT.screenSz.y;
+    }
+    // OUCH !!! hardcoded becoause of laziness
+    int x = ((tp.x * 2000) / wid) - 1000;
+    int y = ((tp.y * 2000) / hei) - 1000;
+    x = x < -900 ? -900 : x > 900 ? 900 : x;
+    y = y < -900 ? -900 : y > 900 ? 900 : y;
+    return new Rect(x-100, y-100, x+100, y+100);
   }
 }
 

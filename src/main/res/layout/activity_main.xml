@@ -3,13 +3,26 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:background="#ff000000"
-             tools:context=".MainActivity">
+             tools:context=".CamActivity">
+
 
   <SurfaceView
    android:id="@+id/sv_cam"
    android:layout_width="match_parent"
    android:layout_height="match_parent"
    android:visibility="visible"/>
+
+  <FrameLayout
+   android:id="@+id/fl_wait"
+   android:layout_width="96dp"
+   android:layout_height="96dp"
+   android:layout_gravity="center"
+   android:visibility="invisible">
+    <ProgressBar
+     style="?android:attr/progressBarStyleLarge"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"/>
+  </FrameLayout>
 
   <ImageView
    android:id="@+id/iv_img"
