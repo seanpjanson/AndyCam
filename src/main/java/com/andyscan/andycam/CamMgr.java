@@ -29,7 +29,7 @@ import java.util.List;
 final class CamMgr {   private CamMgr(){}
   interface CB {
     void onPicTaken(byte[] buf);
-    void onZoom(Rect focRect);
+    void onFocus(Rect focRect);
   }
 
 
@@ -81,11 +81,11 @@ final class CamMgr {   private CamMgr(){}
         prms.setMeteringAreas(focusAreas);
         mCamera.setParameters(prms);
 
-        mCamVwCB.onZoom(mFocRect);
+        mCamVwCB.onFocus(mFocRect);
         mCamera.autoFocus(new Camera.AutoFocusCallback() {
           @Override
           public void onAutoFocus(boolean bSuccess, Camera cam) {           //UT.lg("focused");
-            mCamVwCB.onZoom(null);
+            mCamVwCB.onFocus(null);
             mCamera.takePicture(null, null, new Camera.PictureCallback() {
               @Override
               public void onPictureTaken(final byte[] data, Camera cam) {

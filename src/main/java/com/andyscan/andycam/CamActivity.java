@@ -84,7 +84,7 @@ public class CamActivity extends Activity implements CamVw.CB {
   }
 
   @Override
-  public void onZoom(Rect focArea) {
+  public void onFocus(Rect focArea) {
     int wid = mWaitFl.getLayoutParams().width/2;
     int hei = mWaitFl.getLayoutParams().height/2;
     if (wid > 0 && hei > 0) {

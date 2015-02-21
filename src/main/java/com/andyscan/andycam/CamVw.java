@@ -24,7 +24,7 @@ import android.widget.FrameLayout;
 final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.CB {
   interface CB {
     void onPicTaken(Bitmap bm);
-    void onZoom(Rect focArea);
+    void onFocus(Rect focArea);
   }
 
   private CB mCamActCB;
@@ -47,7 +47,7 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.
   }
 
   @Override
-  public void onZoom(Rect focArea) { mCamActCB.onZoom(focArea); }
+  public void onFocus(Rect focArea) { mCamActCB.onFocus(focArea); }
 
   @Override
   public void surfaceChanged(SurfaceHolder sh, int fmt, int wid, int hei) {
