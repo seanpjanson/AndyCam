@@ -45,6 +45,7 @@ portrait mode).
 Please let me know what the behavior is on your device if you run into trouble.
 
 UPDATE (Feb 21, 2015):
+
 Having nothing better to do, I decided to add 'touch focusing' capability. The camera
 is triggered by touching the screen and the touch point is sent to the camera manager 
 (CamMgr). The touch point is then used to set up focusing area and the manager asks
