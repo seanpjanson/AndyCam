@@ -49,5 +49,5 @@ UPDATE (Feb 21, 2015):
 Having nothing better to do, I decided to add 'touch focusing' capability. The camera
 is triggered by touching the screen and the touch point is sent to the camera manager 
 (CamMgr). The touch point is then used to set up focusing area and the manager asks
-camera to focus, (sending notification 'onFocus()' to the activity). When the focusing
-is done - can be really slow, the picture is taken. Nothing too fancy.
+the camera to focus, (sending notification 'onFocus()' to the activity). When the 
+focusing is done - can be really slow, the picture is taken. Nothing too fancy.
