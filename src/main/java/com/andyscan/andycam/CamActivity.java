@@ -26,6 +26,7 @@ import android.view.WindowManager.LayoutParams;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
+import static com.andyscan.andycam.Util.*;
 
 public class CamActivity extends Activity implements CamVw.CB {
   private SurfaceView mCamSV;
@@ -35,7 +36,7 @@ public class CamActivity extends Activity implements CamVw.CB {
 
   @Override
   protected void onCreate(Bundle bundle) { super.onCreate(bundle);
-    if (UT.init(getApplicationContext(), this) == null ||
+    if (init(getApplicationContext(), this) == null ||
        !getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA) ) {
       Toast.makeText(this, R.string.err_init, Toast.LENGTH_LONG).show();
       finish();  return; //---suicide ------------------->>>
@@ -44,8 +45,8 @@ public class CamActivity extends Activity implements CamVw.CB {
     getWindow().setFlags(LayoutParams.FLAG_FULLSCREEN, LayoutParams.FLAG_FULLSCREEN);
     getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 
-    int rot = UT.lockRot(this, UT.getOri(this));  //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-    setContentView(R.layout.activity_main);
+    int rot = lockRot(this, getOri(this));  //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    setContentView(R.layout.act_cam);
 
     mCamSV = (SurfaceView)findViewById(R.id.sv_cam);
     mCamSV.setVisibility(View.VISIBLE);
@@ -91,7 +92,7 @@ public class CamActivity extends Activity implements CamVw.CB {
       FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
        FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
       );
-      lp.setMargins(mTouchPt.x - wid, mTouchPt.y - hei, 0, 0);          //UT.lg("" + wid + " " + hei);
+      lp.setMargins(mTouchPt.x - wid, mTouchPt.y - hei, 0, 0);       //lg("" + wid + " " + hei);
       mWaitFl.setLayoutParams(lp);
     }
     mWaitFl.setVisibility(focArea != null ? View.VISIBLE : View.GONE);

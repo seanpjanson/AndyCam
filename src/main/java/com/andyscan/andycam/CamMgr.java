@@ -20,10 +20,10 @@ import android.hardware.Camera.Parameters;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import static com.andyscan.andycam.Util.*;
 
 @SuppressWarnings("deprecation")
 final class CamMgr {   private CamMgr(){}
@@ -31,7 +31,6 @@ final class CamMgr {   private CamMgr(){}
     void onPicTaken(byte[] buf);
     void onFocus(Rect focRect);
   }
-
 
   private static CB mCamVwCB;
   private static Camera mCamera;
@@ -52,12 +51,12 @@ final class CamMgr {   private CamMgr(){}
   static void open() {  // called from RESUME
     if (mCamera == null) {   // don't re-open
       try {
-        mCamera = Camera.open();                                      //UT.lg("cam opened ");
-      } catch (Exception e) {UT.le(e);}
+        mCamera = Camera.open();                                      //lg("cam opened ");
+      } catch (Exception e) {le(e);}
       if (mCamera == null) try {  // OUCH !!!
         Method m = Camera.class.getMethod("open", Integer.TYPE);
-        mCamera = (Camera)m.invoke(null, 0);                       //UT.lg("on second attempt");
-      } catch (Exception e) {UT.le(e);}
+        mCamera = (Camera)m.invoke(null, 0);                       //lg("on second attempt");
+      } catch (Exception e) {le(e);}
     }
   }
 
@@ -65,38 +64,38 @@ final class CamMgr {   private CamMgr(){}
     if (mCamera != null) {
       preview(false);
       mCamera.release();
-      mCamera = null;                                              //UT.lg("cam closed");
+      mCamera = null;                                              //lg("cam closed");
     }
   }
 
   static boolean snapPic(Point tp) {
-    if (mCamera != null && mIsPreVw && !mIsBusy) {                           //UT.lg("ready");
+    if (mCamera != null && mIsPreVw && !mIsBusy) {                           //lg("ready");
       mIsBusy = true;
 
       //focusing dance only if focusable
       if (mFocRect != null) try {
-        Parameters prms = mCamera.getParameters();    //UT.lg(""+wid+"x"+hei+" "+(float)wid/hei);
+        Parameters prms = mCamera.getParameters();    //lg(""+wid+"x"+hei+" "+(float)wid/hei);
         List<Camera.Area> focusAreas = new ArrayList<>();
-        focusAreas.add(new Camera.Area(mFocRect = focusArea(tp), 1000));  //UT.lg("" + mFocRect);
+        focusAreas.add(new Camera.Area(mFocRect = focusArea(tp), 1000));  //lg("" + mFocRect);
         prms.setMeteringAreas(focusAreas);
         mCamera.setParameters(prms);
 
         mCamVwCB.onFocus(mFocRect);
         mCamera.autoFocus(new Camera.AutoFocusCallback() {
           @Override
-          public void onAutoFocus(boolean bSuccess, Camera cam) {           //UT.lg("focused");
+          public void onAutoFocus(boolean bSuccess, Camera cam) {           //lg("focused");
             mCamVwCB.onFocus(null);
             mCamera.takePicture(null, null, new Camera.PictureCallback() {
               @Override
               public void onPictureTaken(final byte[] data, Camera cam) {
                 preview(false);
-                mCamVwCB.onPicTaken(data.clone());            //UT.lg("taken " + data.length);
+                mCamVwCB.onPicTaken(data.clone());            //lg("taken " + data.length);
               }
             });
           }
         });
         return true;  //-------------------------------->>>
-      } catch (Exception e) {UT.le(e);}
+      } catch (Exception e) {le(e);}
       finally {
         mIsBusy = false;
       }
@@ -107,11 +106,11 @@ final class CamMgr {   private CamMgr(){}
           @Override
           public void onPictureTaken(final byte[] data, Camera cam) {
             preview(false);
-            mCamVwCB.onPicTaken(data.clone());                  //UT.lg("taken " + data.length);
+            mCamVwCB.onPicTaken(data.clone());                  //lg("taken " + data.length);
           }
         });
         return true; //------------------------------>>>
-      } catch (Exception e) {UT.le(e);}
+      } catch (Exception e) {le(e);}
       finally {
         mIsBusy = false;
       }
@@ -127,9 +126,9 @@ final class CamMgr {   private CamMgr(){}
     float ratio = 0.0f;
     if (mCamera != null) try {
       preview(false);
-      Parameters prms = mCamera.getParameters();    //UT.lg(""+wid+"x"+hei+" "+(float)wid/hei);
+      Parameters prms = mCamera.getParameters();    //lg(""+wid+"x"+hei+" "+(float)wid/hei);
 
-      Camera.Size picSz = pictSz(prms.getSupportedPictureSizes(), wid, hei, UT.IMAGE_SZ);
+      Camera.Size picSz = pictSz(prms.getSupportedPictureSizes(), wid, hei, IMAGE_SZ);
       if (picSz != null) {
         prms.setPictureSize(picSz.width, picSz.height);
         Camera.Size pvwSz = prvwSz(prms.getSupportedPreviewSizes(), picSz.width, picSz.height);
@@ -139,7 +138,7 @@ final class CamMgr {   private CamMgr(){}
         }
       }
 
-      if (UT.acx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)){
+      if (acx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)){
         if (!prms.getFocusMode().equals(Parameters.FOCUS_MODE_AUTO)) {
           prms.setFocusMode(Parameters.FOCUS_MODE_AUTO);
         }
@@ -151,15 +150,15 @@ final class CamMgr {   private CamMgr(){}
         }
       }
 
-      prms.setJpegQuality(UT.IMAGE_QUAL);
+      prms.setJpegQuality(IMAGE_QUAL);
 
       mCamera.setParameters(prms);
 
-      mCamera.setDisplayOrientation(UT.getDegs(mRot));
+      mCamera.setDisplayOrientation(getDegs(mRot));
       mCamera.setPreviewDisplay(surfHldr);
 
       preview(true);
-    } catch (Exception e) {UT.le(e);}
+    } catch (Exception e) {le(e);}
     return ratio;
   }
 
@@ -177,15 +176,15 @@ final class CamMgr {   private CamMgr(){}
         if (diff >= 0) {
           if (posDiff >= diff) {
             posDiff = diff;
-            posOptimSz = size;                    //UT.lg("larger " + sz.width + "x" + sz.height);
+            posOptimSz = size;                    //lg("larger " + sz.width + "x" + sz.height);
           }
         } else {
           if (negDiff < diff) {
             negDiff = diff;
-            negOptimSz = size;                  //UT.lg("smaller " + sz.width + "x" + sz.height);
+            negOptimSz = size;                  //lg("smaller " + sz.width + "x" + sz.height);
           }
         }
-      }                                                             // UT.lg("P" + allSzs);
+      }                                                             // lg("P" + allSzs);
       return posOptimSz != null ?  posOptimSz : negOptimSz;    // preferring closest larger
     }
     return null;
@@ -194,7 +193,7 @@ final class CamMgr {   private CamMgr(){}
   private static Camera.Size prvwSz(List<Camera.Size> sizes, int wid, int hei) {
     Camera.Size sz = null;
     if (sizes != null && (wid * hei) != 0) {                          //String allSzs = "";
-      float wantRat = (float)wid / hei;        //UT.lg("d: " + wid + "x" + hei + " " + dispRat);
+      float wantRat = (float)wid / hei;        //lg("d: " + wid + "x" + hei + " " + dispRat);
 
       // first step, get the closest ratio
       float minFDiff = Float.MAX_VALUE;
@@ -206,7 +205,7 @@ final class CamMgr {   private CamMgr(){}
           minFDiff = ratDif;
           minRat = hasRat;
         }
-      }                                                            //UT.lg("C" + allSzs);
+      }                                                            //lg("C" + allSzs);
       // for every item close to ratio (+/- 8%), find the closest size match
       int reqSz = hei * wid;
       int minIDiff = Integer.MAX_VALUE;
@@ -217,9 +216,9 @@ final class CamMgr {   private CamMgr(){}
           if (szDif < minIDiff) {
             minIDiff = szDif;
             sz = size;
-          }                           //UT.lg("" + sz.width + "x" + sz.height + " " + camRat);
+          }                           //lg("" + sz.width + "x" + sz.height + " " + camRat);
         }
-      }                                           //UT.lg("" + pvSz.width + "x" + pvSz.height);
+      }                                           //lg("" + pvSz.width + "x" + pvSz.height);
     }
     return sz;
   }
@@ -228,12 +227,12 @@ final class CamMgr {   private CamMgr(){}
     if (mCamera != null) {
       if (bOn) {
         if (!mIsPreVw) {
-          mCamera.startPreview();                                   //UT.lg("turn started");
+          mCamera.startPreview();                                   //lg("turn started");
           mIsPreVw = true;
         }
       } else {
         if (mIsPreVw) {
-          mCamera.stopPreview();                                   //UT.lg("turn stopped");
+          mCamera.stopPreview();                                   //lg("turn stopped");
           mIsPreVw = false;
         }
       }
@@ -242,12 +241,12 @@ final class CamMgr {   private CamMgr(){}
 
   private static Rect focusArea(Point tp) {
     int wid, hei;
-    if  (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180) {         //UT.lg("PORT");
-      wid = UT.screenSz.y;
-      hei = UT.screenSz.x;
-    } else {                                                                   //UT.lg("LAND");
-      wid = UT.screenSz.x;
-      hei = UT.screenSz.y;
+    if  (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180) {         //lg("PORT");
+      wid = screenSz.y;
+      hei = screenSz.x;
+    } else {                                                                   //lg("LAND");
+      wid = screenSz.x;
+      hei = screenSz.y;
     }
     // OUCH !!! hardcoded becoause of laziness
     int x = ((tp.x * 2000) / wid) - 1000;
@@ -257,4 +256,3 @@ final class CamMgr {   private CamMgr(){}
     return new Rect(x-100, y-100, x+100, y+100);
   }
 }
-

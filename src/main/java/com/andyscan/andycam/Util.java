@@ -15,7 +15,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 
-final class UT {   private UT() {}
+final class Util { private Util() {}
 
   // IMAGE_SZ the desired (approximate) image size specified as size of a square the
   //   final image should fit. For instance, the value of 1600 will attempt to select
@@ -47,12 +47,12 @@ final class UT {   private UT() {}
   private static final String L_TG = "A_S";
   private static final String E_TG = L_TG;
 
-  private static UT  mInst;
+  private static Util mInst;
   static Context acx;
   //N7-I(Nexus7-1stGen), PD10 have LAND default, N7-II, SAMS have PORT
   private static boolean isLandTab;
   static Point screenSz;      // needed for focus point
-  static UT init(Context ctx, Activity act) {
+  static Util init(Context ctx, Activity act) {
     if (mInst == null) {
       acx = ctx.getApplicationContext();
       if (act != null) {
@@ -62,7 +62,7 @@ final class UT {   private UT() {}
         isLandTab = (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) ?
          (screenSz.x < screenSz.y) : (screenSz.x > screenSz.y);
       }
-      mInst = new UT();                                         //lg("img cache " + ccheSz);
+      mInst = new Util();                                         //lg("img cache " + ccheSz);
     }
     return mInst;
   }
