@@ -28,7 +28,7 @@ rectangles of different size ratios). Letterbox, or fit-in will fit all your ima
 the preview rectangle, leaving background colored stripes on two sides.
 Pan&Scan mode will fill the screen, letting the image 'overflow' on sides.
 
-The parameters mentioned here can be pre-set in the UT (utility) class.
+The parameters mentioned here can be pre-set in the 'Util' class.
 
 The code here has a lot of fluff, since it has to deal with a lot of additional issues:
 
