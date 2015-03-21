@@ -20,7 +20,6 @@ package com.andyscan.andycam;
  import android.view.SurfaceHolder;
  import android.view.SurfaceView;
  import android.widget.FrameLayout;
- import static com.andyscan.andycam.Util.*;
 
 final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.CB {
   interface CB {
@@ -43,7 +42,7 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.
 
   @Override
   public void onPicTaken(byte[] buf) {
-    final Bitmap bm = getRotBM(buf, mRot);      //lg(""+bm.getWidth()+" "+bm.getHeight());
+    final Bitmap bm = UT.getRotBM(buf, mRot);      //lg(""+bm.getWidth()+" "+bm.getHeight());
     mCamActCB.onPicTaken(bm);
   }
 
@@ -61,7 +60,7 @@ final class CamVw extends SurfaceView implements SurfaceHolder.Callback, CamMgr.
       float oldRat = (float) wid / hei;
       float newRat = CamMgr.setCamera(sh, wid, hei, mRot);
       if (newRat != 0.0f && Math.abs(newRat - oldRat) > 0.03f) {  //lg("rat "+oldRat+":"+newRat);
-        if (FIT_IN) {    // FIT-IN preview
+        if (UT.FIT_IN) {    // FIT-IN preview
           if (oldRat < newRat) hei = (int) ((oldRat * hei) / newRat);
           else wid = (int) ((newRat * wid) / oldRat);
         } else {                   // FIT-IN preview

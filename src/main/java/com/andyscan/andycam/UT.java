@@ -15,7 +15,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 
-final class Util { private Util() {}
+enum UT { INSTANCE;
 
   // IMAGE_SZ the desired (approximate) image size specified as size of a square the
   //   final image should fit. For instance, the value of 1600 will attempt to select
@@ -47,24 +47,21 @@ final class Util { private Util() {}
   private static final String L_TG = "A_S";
   private static final String E_TG = L_TG;
 
-  private static Util mInst;
   static Context acx;
   //N7-I(Nexus7-1stGen), PD10 have LAND default, N7-II, SAMS have PORT
   private static boolean isLandTab;
   static Point screenSz;      // needed for focus point
-  static Util init(Context ctx, Activity act) {
-    if (mInst == null) {
-      acx = ctx.getApplicationContext();
-      if (act != null) {
-        Display dsp = act.getWindowManager().getDefaultDisplay();
-        dsp.getSize(screenSz = new Point());
-        int rot = dsp.getRotation();
-        isLandTab = (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) ?
-         (screenSz.x < screenSz.y) : (screenSz.x > screenSz.y);
-      }
-      mInst = new Util();                                         //lg("img cache " + ccheSz);
+  static boolean init(Context ctx, Activity act) {
+    acx = ctx.getApplicationContext();
+    if (act != null) {
+      Display dsp = act.getWindowManager().getDefaultDisplay();
+      dsp.getSize(screenSz = new Point());
+      int rot = dsp.getRotation();
+      isLandTab = (rot == Surface.ROTATION_90 || rot == Surface.ROTATION_270) ?
+       (screenSz.x < screenSz.y) : (screenSz.x > screenSz.y);
+      return true;
     }
-    return mInst;
+    return false;
   }
 
   static int getDegs(int rot) {   //TAB sensing handle the N7-I, N10, PD10 tablets

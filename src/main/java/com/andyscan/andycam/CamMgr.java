@@ -23,7 +23,6 @@ import android.view.SurfaceView;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import static com.andyscan.andycam.Util.*;
 
 @SuppressWarnings("deprecation")
 final class CamMgr {   private CamMgr(){}
@@ -52,11 +51,11 @@ final class CamMgr {   private CamMgr(){}
     if (mCamera == null) {   // don't re-open
       try {
         mCamera = Camera.open();                                      //lg("cam opened ");
-      } catch (Exception e) {le(e);}
+      } catch (Exception e) {UT.le(e);}
       if (mCamera == null) try {  // OUCH !!!
         Method m = Camera.class.getMethod("open", Integer.TYPE);
         mCamera = (Camera)m.invoke(null, 0);                       //lg("on second attempt");
-      } catch (Exception e) {le(e);}
+      } catch (Exception e) {UT.le(e);}
     }
   }
 
@@ -95,7 +94,7 @@ final class CamMgr {   private CamMgr(){}
           }
         });
         return true;  //-------------------------------->>>
-      } catch (Exception e) {le(e);}
+      } catch (Exception e) {UT.le(e);}
       finally {
         mIsBusy = false;
       }
@@ -110,7 +109,7 @@ final class CamMgr {   private CamMgr(){}
           }
         });
         return true; //------------------------------>>>
-      } catch (Exception e) {le(e);}
+      } catch (Exception e) {UT.le(e);}
       finally {
         mIsBusy = false;
       }
@@ -128,7 +127,7 @@ final class CamMgr {   private CamMgr(){}
       preview(false);
       Parameters prms = mCamera.getParameters();    //lg(""+wid+"x"+hei+" "+(float)wid/hei);
 
-      Camera.Size picSz = pictSz(prms.getSupportedPictureSizes(), wid, hei, IMAGE_SZ);
+      Camera.Size picSz = pictSz(prms.getSupportedPictureSizes(), wid, hei, UT.IMAGE_SZ);
       if (picSz != null) {
         prms.setPictureSize(picSz.width, picSz.height);
         Camera.Size pvwSz = prvwSz(prms.getSupportedPreviewSizes(), picSz.width, picSz.height);
@@ -138,7 +137,7 @@ final class CamMgr {   private CamMgr(){}
         }
       }
 
-      if (acx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)){
+      if (UT.acx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)){
         if (!prms.getFocusMode().equals(Parameters.FOCUS_MODE_AUTO)) {
           prms.setFocusMode(Parameters.FOCUS_MODE_AUTO);
         }
@@ -150,15 +149,15 @@ final class CamMgr {   private CamMgr(){}
         }
       }
 
-      prms.setJpegQuality(IMAGE_QUAL);
+      prms.setJpegQuality(UT.IMAGE_QUAL);
 
       mCamera.setParameters(prms);
 
-      mCamera.setDisplayOrientation(getDegs(mRot));
+      mCamera.setDisplayOrientation(UT.getDegs(mRot));
       mCamera.setPreviewDisplay(surfHldr);
 
       preview(true);
-    } catch (Exception e) {le(e);}
+    } catch (Exception e) {UT.le(e);}
     return ratio;
   }
 
@@ -242,11 +241,11 @@ final class CamMgr {   private CamMgr(){}
   private static Rect focusArea(Point tp) {
     int wid, hei;
     if  (mRot == Surface.ROTATION_0 || mRot == Surface.ROTATION_180) {         //lg("PORT");
-      wid = screenSz.y;
-      hei = screenSz.x;
+      wid = UT.screenSz.y;
+      hei = UT.screenSz.x;
     } else {                                                                   //lg("LAND");
-      wid = screenSz.x;
-      hei = screenSz.y;
+      wid = UT.screenSz.x;
+      hei = UT.screenSz.y;
     }
     // OUCH !!! hardcoded becoause of laziness
     int x = ((tp.x * 2000) / wid) - 1000;

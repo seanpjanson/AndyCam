@@ -26,7 +26,6 @@ import android.view.WindowManager.LayoutParams;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
-import static com.andyscan.andycam.Util.*;
 
 public class CamActivity extends Activity implements CamVw.CB {
   private SurfaceView mCamSV;
@@ -36,7 +35,7 @@ public class CamActivity extends Activity implements CamVw.CB {
 
   @Override
   protected void onCreate(Bundle bundle) { super.onCreate(bundle);
-    if (init(getApplicationContext(), this) == null ||
+    if (!UT.init(getApplicationContext(), this) ||
        !getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA) ) {
       Toast.makeText(this, R.string.err_init, Toast.LENGTH_LONG).show();
       finish();  return; //---suicide ------------------->>>
@@ -45,7 +44,7 @@ public class CamActivity extends Activity implements CamVw.CB {
     getWindow().setFlags(LayoutParams.FLAG_FULLSCREEN, LayoutParams.FLAG_FULLSCREEN);
     getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 
-    int rot = lockRot(this, getOri(this));  //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    int rot = UT.lockRot(this, UT.getOri(this));  //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
     setContentView(R.layout.act_cam);
 
     mCamSV = (SurfaceView)findViewById(R.id.sv_cam);
